@@ -1,0 +1,33 @@
+import { useRef } from 'react'
+import { fileToDataURL } from '../lib/imageUtils.js'
+
+export default function UploadButton({ onImage, label = 'Upload image', disabled }) {
+  const inputRef = useRef(null)
+
+  async function handleChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const dataURL = await fileToDataURL(file)
+    onImage(dataURL)
+    e.target.value = '' // allow re-uploading the same file
+  }
+
+  return (
+    <>
+      <button
+        className="secondary-btn full"
+        onClick={() => inputRef.current?.click()}
+        disabled={disabled}
+      >
+        {label}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={handleChange}
+      />
+    </>
+  )
+}
