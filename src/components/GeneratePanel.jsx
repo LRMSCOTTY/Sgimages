@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { generateImage } from '../lib/mockAI.js'
 
 const SUGGESTIONS = [
   'a serene mountain lake at dawn',
@@ -9,28 +8,26 @@ const SUGGESTIONS = [
 ]
 
 const SIZES = [
-  { label: 'Square · 768²', w: 768, h: 768 },
-  { label: 'Landscape · 1024×640', w: 1024, h: 640 },
-  { label: 'Portrait · 640×1024', w: 640, h: 1024 }
+  { label: 'Square · 768²', width: 768, height: 768 },
+  { label: 'Landscape · 1024×640', width: 1024, height: 640 },
+  { label: 'Portrait · 640×1024', width: 640, height: 1024 }
 ]
 
-export default function GeneratePanel({ runTask, busy }) {
+export default function GeneratePanel({ editor }) {
   const [prompt, setPrompt] = useState('')
   const [size, setSize] = useState(SIZES[0])
 
   function generate() {
     const p = prompt.trim()
     if (!p) return
-    runTask('Generating image…', () =>
-      generateImage(p, { width: size.w, height: size.h })
-    )
+    editor.generate(p, { width: size.width, height: size.height })
   }
 
   return (
     <div className="panel-inner">
       <header className="panel-head">
         <h2>Generate</h2>
-        <p>Describe an image and the mock engine will compose one.</p>
+        <p>Describe an image and the engine will compose one. It becomes a fresh, editable document.</p>
       </header>
 
       <label className="field-label">Prompt</label>
@@ -63,11 +60,7 @@ export default function GeneratePanel({ runTask, busy }) {
         ))}
       </div>
 
-      <button
-        className="primary-btn full"
-        onClick={generate}
-        disabled={busy || !prompt.trim()}
-      >
+      <button className="primary-btn full" onClick={generate} disabled={editor.busy || !prompt.trim()}>
         ✨ Generate image
       </button>
     </div>

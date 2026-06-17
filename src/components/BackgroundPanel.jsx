@@ -1,23 +1,17 @@
 import { useState } from 'react'
 import UploadButton from './UploadButton.jsx'
-import { removeBackground } from '../lib/mockAI.js'
 
-export default function BackgroundPanel({ image, runTask, busy, setImage }) {
+export default function BackgroundPanel({ editor }) {
   const [tolerance, setTolerance] = useState(40)
 
-  function run() {
-    if (!image) return
-    runTask('Removing background…', () => removeBackground(image, { tolerance }))
-  }
-
-  if (!image) {
+  if (!editor.hasImage) {
     return (
       <div className="panel-inner">
         <header className="panel-head">
           <h2>Background</h2>
           <p>Upload a photo to cut out its background.</p>
         </header>
-        <UploadButton onImage={setImage} label="⬆ Upload an image" />
+        <UploadButton onImage={editor.upload} label="⬆ Upload an image" />
       </div>
     )
   }
@@ -26,7 +20,10 @@ export default function BackgroundPanel({ image, runTask, busy, setImage }) {
     <div className="panel-inner">
       <header className="panel-head">
         <h2>Background</h2>
-        <p>Samples the corner colors and removes matching pixels. Works best on uniform backgrounds.</p>
+        <p>
+          Samples the corner colors and removes matching pixels with a feathered edge. Added as a
+          layer you can toggle off anytime.
+        </p>
       </header>
 
       <div className="slider-row">
@@ -44,11 +41,15 @@ export default function BackgroundPanel({ image, runTask, busy, setImage }) {
         <p className="hint-text">Higher tolerance removes a wider range of background colors.</p>
       </div>
 
-      <button className="primary-btn full" onClick={run} disabled={busy}>
+      <button
+        className="primary-btn full"
+        onClick={() => editor.addRemoveBackground(tolerance)}
+        disabled={editor.busy}
+      >
         ✂️ Remove background
       </button>
 
-      <UploadButton onImage={setImage} label="Replace image" disabled={busy} />
+      <UploadButton onImage={editor.upload} label="Replace image" disabled={editor.busy} />
     </div>
   )
 }
