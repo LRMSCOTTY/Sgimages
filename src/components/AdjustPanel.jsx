@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react'
 import UploadButton from './UploadButton.jsx'
-import {
-  defaultAdjustments,
-  adjustmentsToFilter,
-  applyAdjustments,
-  rotate,
-  flip
-} from '../lib/imageUtils.js'
+import { defaultAdjustments as defaults } from '../lib/adjustments.js'
 
 const SLIDERS = [
   { key: 'brightness', label: 'Brightness', min: 0, max: 200, suffix: '%' },
@@ -19,34 +13,45 @@ const SLIDERS = [
   { key: 'invert', label: 'Invert', min: 0, max: 100, suffix: '%' }
 ]
 
-export default function AdjustPanel({ image, runTask, busy, setImage }) {
-  const [adj, setAdj] = useState(defaultAdjustments)
+export default function AdjustPanel({ editor }) {
+  const { doc, selectedOpId } = editor
+  // If an existing adjust layer is selected, edit it in place; else start fresh.
+  const editing = doc?.ops.find((o) => o.id === selectedOpId && o.type === 'adjust')
+  const [adj, setAdj] = useState(editing ? editing.params : defaults)
 
-  // Reset sliders whenever the underlying image changes.
+  // Sync local sliders when the selected layer / image changes.
   useEffect(() => {
-    setAdj(defaultAdjustments)
-  }, [image])
+    setAdj(editing ? editing.params : defaults)
+    editor.clearDraft()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedOpId, doc?.source])
+
+  // Clear any live draft when leaving the panel.
+  useEffect(() => () => editor.clearDraft(), []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function update(key, value) {
-    setAdj((a) => ({ ...a, [key]: Number(value) }))
+    const next = { ...adj, [key]: Number(value) }
+    setAdj(next)
+    editor.setAdjustDraft(next, editing?.id) // live preview through real pipeline
   }
 
-  function bake() {
-    if (!image) return
-    runTask('Applying adjustments…', () => applyAdjustments(image, adj))
-    setAdj(defaultAdjustments)
+  function apply() {
+    editor.commitAdjust(adj, editing?.id)
   }
 
-  const livePreview = adjustmentsToFilter(adj)
+  function reset() {
+    setAdj(defaults)
+    editor.clearDraft()
+  }
 
-  if (!image) {
+  if (!editor.hasImage) {
     return (
       <div className="panel-inner">
         <header className="panel-head">
           <h2>Adjust</h2>
-          <p>Upload an image to tune filters and transforms.</p>
+          <p>Upload an image to tune filters and transforms — non-destructively.</p>
         </header>
-        <UploadButton onImage={setImage} label="⬆ Upload an image" />
+        <UploadButton onImage={editor.upload} label="⬆ Upload an image" />
       </div>
     )
   }
@@ -55,12 +60,10 @@ export default function AdjustPanel({ image, runTask, busy, setImage }) {
     <div className="panel-inner">
       <header className="panel-head">
         <h2>Adjust</h2>
-        <p>Live preview below; click apply to bake it into the image.</p>
+        <p>
+          {editing ? 'Editing an existing adjustment layer.' : 'Drag to preview, then apply to add an adjustment layer.'}
+        </p>
       </header>
-
-      <div className="adjust-preview">
-        <img src={image} alt="Adjustment preview" style={{ filter: livePreview }} />
-      </div>
 
       <div className="sliders">
         {SLIDERS.map((s) => (
@@ -84,22 +87,22 @@ export default function AdjustPanel({ image, runTask, busy, setImage }) {
       </div>
 
       <div className="transform-row">
-        <button className="secondary-btn" disabled={busy} onClick={() => runTask('Rotating…', () => rotate(image, -90))}>↺ Rotate L</button>
-        <button className="secondary-btn" disabled={busy} onClick={() => runTask('Rotating…', () => rotate(image, 90))}>↻ Rotate R</button>
-        <button className="secondary-btn" disabled={busy} onClick={() => runTask('Flipping…', () => flip(image, 'h'))}>⇋ Flip H</button>
-        <button className="secondary-btn" disabled={busy} onClick={() => runTask('Flipping…', () => flip(image, 'v'))}>⇅ Flip V</button>
+        <button className="secondary-btn" disabled={editor.busy} onClick={() => editor.addRotate(-90)}>↺ Rotate L</button>
+        <button className="secondary-btn" disabled={editor.busy} onClick={() => editor.addRotate(90)}>↻ Rotate R</button>
+        <button className="secondary-btn" disabled={editor.busy} onClick={() => editor.addFlip('h')}>⇋ Flip H</button>
+        <button className="secondary-btn" disabled={editor.busy} onClick={() => editor.addFlip('v')}>⇅ Flip V</button>
       </div>
 
       <div className="panel-actions">
-        <button className="secondary-btn" onClick={() => setAdj(defaultAdjustments)} disabled={busy}>
+        <button className="secondary-btn" onClick={reset} disabled={editor.busy}>
           Reset
         </button>
-        <button className="primary-btn" onClick={bake} disabled={busy}>
-          Apply adjustments
+        <button className="primary-btn" onClick={apply} disabled={editor.busy}>
+          {editing ? 'Update layer' : 'Apply adjustment'}
         </button>
       </div>
 
-      <UploadButton onImage={setImage} label="Replace image" disabled={busy} />
+      <UploadButton onImage={editor.upload} label="Replace image" disabled={editor.busy} />
     </div>
   )
 }

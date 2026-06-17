@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import UploadButton from './UploadButton.jsx'
-import { generativeEdit } from '../lib/mockAI.js'
 
 const SUGGESTIONS = [
   'make it a golden-hour sunset',
@@ -9,23 +8,23 @@ const SUGGESTIONS = [
   'vaporwave neon glow'
 ]
 
-export default function GenerativeEditPanel({ image, runTask, busy, setImage }) {
+export default function GenerativeEditPanel({ editor }) {
   const [prompt, setPrompt] = useState('')
 
   function run() {
     const p = prompt.trim()
-    if (!p || !image) return
-    runTask('Reimagining image…', () => generativeEdit(image, p))
+    if (!p) return
+    editor.addGenerative(p)
   }
 
-  if (!image) {
+  if (!editor.hasImage) {
     return (
       <div className="panel-inner">
         <header className="panel-head">
           <h2>Reimagine</h2>
           <p>Upload or generate an image, then guide an edit with a prompt.</p>
         </header>
-        <UploadButton onImage={setImage} label="⬆ Upload an image" />
+        <UploadButton onImage={editor.upload} label="⬆ Upload an image" />
       </div>
     )
   }
@@ -34,7 +33,7 @@ export default function GenerativeEditPanel({ image, runTask, busy, setImage }) 
     <div className="panel-inner">
       <header className="panel-head">
         <h2>Reimagine</h2>
-        <p>Describe how the image should change.</p>
+        <p>Describe how the image should change. Added as a non-destructive layer.</p>
       </header>
 
       <label className="field-label">Edit prompt</label>
@@ -54,11 +53,11 @@ export default function GenerativeEditPanel({ image, runTask, busy, setImage }) 
         ))}
       </div>
 
-      <button className="primary-btn full" onClick={run} disabled={busy || !prompt.trim()}>
+      <button className="primary-btn full" onClick={run} disabled={editor.busy || !prompt.trim()}>
         🪄 Apply generative edit
       </button>
 
-      <UploadButton onImage={setImage} label="Replace image" disabled={busy} />
+      <UploadButton onImage={editor.upload} label="Replace image" disabled={editor.busy} />
     </div>
   )
 }

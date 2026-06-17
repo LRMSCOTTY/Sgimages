@@ -5,7 +5,7 @@ const TOOL_LIST = [
   { id: 'generative', label: 'Reimagine', hint: 'Generative edit', icon: '🪄' }
 ]
 
-export default function Sidebar({ tool, setTool }) {
+export default function Sidebar({ tool, setTool, usingWorker }) {
   return (
     <nav className="sidebar">
       <div className="brand">
@@ -30,8 +30,10 @@ export default function Sidebar({ tool, setTool }) {
         ))}
       </ul>
       <div className="sidebar-foot">
-        <span className="badge">Mock AI</span>
-        <p>Runs fully in your browser — no API key needed.</p>
+        <span className="badge">Non-destructive</span>
+        <p>
+          Every edit is a live layer. Rendering runs {usingWorker ? 'off-thread in a Web Worker' : 'on the main thread'}.
+        </p>
       </div>
     </nav>
   )

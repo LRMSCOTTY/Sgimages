@@ -1,5 +1,13 @@
 import { useRef } from 'react'
-import { fileToDataURL } from '../lib/imageUtils.js'
+
+function fileToDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
 
 export default function UploadButton({ onImage, label = 'Upload image', disabled }) {
   const inputRef = useRef(null)
@@ -21,13 +29,7 @@ export default function UploadButton({ onImage, label = 'Upload image', disabled
       >
         {label}
       </button>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={handleChange}
-      />
+      <input ref={inputRef} type="file" accept="image/*" hidden onChange={handleChange} />
     </>
   )
 }
