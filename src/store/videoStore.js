@@ -6,13 +6,18 @@ const uid = () => crypto.randomUUID()
 export const DURATIONS = [3, 5, 10, 15, 25, 30]
 
 export const MODELS = [
-  { id: 'runway-gen3-turbo', name: 'Runway Turbo', quality: 4, speed: 4, nativeDurations: [5, 10], modes: ['text-to-video', 'image-to-video', 'video-to-video'], badge: 'Fast' },
-  { id: 'runway-gen3-alpha', name: 'Runway Alpha', quality: 5, speed: 3, nativeDurations: [5, 10], modes: ['text-to-video', 'image-to-video', 'video-to-video'], badge: 'Ultra' },
-  { id: 'luma-dream-machine', name: 'Luma Dream', quality: 4, speed: 3, nativeDurations: [5, 9], modes: ['text-to-video', 'image-to-video', 'keyframe'], badge: 'Cinematic' },
-  { id: 'kling-v2', name: 'Kling v2', quality: 4, speed: 2, nativeDurations: [5, 10], modes: ['image-to-video', 'video-to-video'], badge: 'Motion' },
-  { id: 'hailuo-minimax', name: 'Hailuo AI', quality: 3, speed: 4, nativeDurations: [6], modes: ['text-to-video', 'image-to-video'], badge: 'Quick' },
-  { id: 'wan2.1', name: 'Wan 2.1', quality: 3, speed: 2, nativeDurations: [5], modes: ['image-to-video'], badge: 'Open' },
-  { id: 'cogvideox', name: 'CogVideoX', quality: 3, speed: 2, nativeDurations: [6], modes: ['text-to-video'], badge: 'Open' }
+  // Commercial providers (need API keys)
+  { id: 'runway-gen3-turbo', name: 'Runway Turbo', quality: 4, speed: 4, nativeDurations: [5, 10], modes: ['text-to-video', 'image-to-video', 'video-to-video'], badge: 'Fast', tier: 'commercial' },
+  { id: 'runway-gen3-alpha', name: 'Runway Alpha', quality: 5, speed: 3, nativeDurations: [5, 10], modes: ['text-to-video', 'image-to-video', 'video-to-video'], badge: 'Ultra', tier: 'commercial' },
+  { id: 'luma-dream-machine', name: 'Luma Dream', quality: 4, speed: 3, nativeDurations: [5, 9], modes: ['text-to-video', 'image-to-video', 'keyframe'], badge: 'Cinematic', tier: 'commercial' },
+  { id: 'kling-v2', name: 'Kling v2', quality: 4, speed: 2, nativeDurations: [5, 10], modes: ['image-to-video', 'video-to-video'], badge: 'Motion', tier: 'commercial' },
+  { id: 'hailuo-minimax', name: 'Hailuo AI', quality: 3, speed: 4, nativeDurations: [6], modes: ['text-to-video', 'image-to-video'], badge: 'Quick', tier: 'commercial' },
+  // Open-source via Replicate (REPLICATE_API_TOKEN)
+  { id: 'ltx-video', name: 'LTX-Video', quality: 4, speed: 5, nativeDurations: [5], modes: ['text-to-video', 'image-to-video'], badge: 'Open·Fast', tier: 'open' },
+  { id: 'hunyuanvideo', name: 'HunyuanVideo', quality: 5, speed: 2, nativeDurations: [5], modes: ['text-to-video'], badge: 'Open·Best', tier: 'open' },
+  { id: 'mochi-1', name: 'Mochi-1', quality: 4, speed: 3, nativeDurations: [5], modes: ['text-to-video'], badge: 'Open·Motion', tier: 'open' },
+  { id: 'wan2.1', name: 'Wan 2.1', quality: 3, speed: 3, nativeDurations: [5], modes: ['image-to-video'], badge: 'Open·I2V', tier: 'open' },
+  { id: 'cogvideox', name: 'CogVideoX', quality: 3, speed: 2, nativeDurations: [6], modes: ['text-to-video'], badge: 'Open', tier: 'open' }
 ]
 
 export const ASPECT_RATIOS = ['16:9', '9:16', '1:1']

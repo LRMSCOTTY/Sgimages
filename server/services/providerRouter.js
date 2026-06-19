@@ -17,6 +17,9 @@ const NATIVE_DURATIONS = {
   'hailuo-minimax': [6],
   'wan2.1': [5],
   'cogvideox': [6],
+  'ltx-video': [5],
+  'hunyuanvideo': [5],
+  'mochi-1': [5],
   'svd': [4]
 }
 
@@ -120,11 +123,25 @@ async function generateSingle(model, mode, prompt, imageUrl, dur, aspectRatio, c
 
     case 'wan2.1':
       if (!process.env.REPLICATE_API_TOKEN) throw new Error('REPLICATE_API_TOKEN not configured')
-      return replicate.generateImageToVideo({ imageUrl, prompt, model: 'wan2.1' }, progressCb)
+      return replicate.generateImageToVideo({ imageUrl, prompt, model: 'wan2.1', dur, aspectRatio }, progressCb)
 
     case 'cogvideox':
       if (!process.env.REPLICATE_API_TOKEN) throw new Error('REPLICATE_API_TOKEN not configured')
-      return replicate.generateTextToVideo({ prompt, model: 'cogvideox' }, progressCb)
+      return replicate.generateTextToVideo({ prompt, model: 'cogvideox', duration: dur, aspectRatio }, progressCb)
+
+    case 'ltx-video':
+      if (!process.env.REPLICATE_API_TOKEN) throw new Error('REPLICATE_API_TOKEN not configured')
+      return mode === 'image-to-video'
+        ? replicate.generateImageToVideo({ imageUrl, prompt, model: 'ltx-video', duration: dur, aspectRatio }, progressCb)
+        : replicate.generateTextToVideo({ prompt, model: 'ltx-video', duration: dur, aspectRatio }, progressCb)
+
+    case 'hunyuanvideo':
+      if (!process.env.REPLICATE_API_TOKEN) throw new Error('REPLICATE_API_TOKEN not configured')
+      return replicate.generateTextToVideo({ prompt, model: 'hunyuanvideo', duration: dur, aspectRatio }, progressCb)
+
+    case 'mochi-1':
+      if (!process.env.REPLICATE_API_TOKEN) throw new Error('REPLICATE_API_TOKEN not configured')
+      return replicate.generateTextToVideo({ prompt, model: 'mochi-1', duration: dur, aspectRatio }, progressCb)
 
     default:
       throw new Error(`Unknown model: ${model}`)

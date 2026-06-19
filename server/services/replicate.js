@@ -12,8 +12,17 @@ function headers() {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
 const MODELS = {
+  // Image-to-video (open source, comparable to Kling/Runway)
   'wan2.1': 'wavespeedai/wan-2.1-i2v-480p',
+  // Text-to-video (open source, comparable to Runway)
   'cogvideox': 'thudm/cogvideox-5b',
+  // Fastest open-source T2V (Lightricks, comparable to Runway Turbo)
+  'ltx-video': 'lightricks/ltx-video',
+  // Highest quality open-source T2V (Tencent, comparable to Luma Ray2)
+  'hunyuanvideo': 'tencent/hunyuanvideo',
+  // Excellent motion quality (Genmo)
+  'mochi-1': 'genmo/mochi-1',
+  // Classic
   'svd': 'stability-ai/stable-video-diffusion',
   'zero123plus': 'lucataco/zero123plus'
 }
@@ -73,20 +82,52 @@ export async function generateMultiAngle({ imageUrl, azimuth = 90 }) {
   })
 }
 
-export async function generateImageToVideo({ imageUrl, prompt, model = 'wan2.1' }, progressCb) {
-  const input = model === 'svd'
-    ? { input_image: imageUrl, video_length: 14, sizing_strategy: 'maintain_aspect_ratio' }
-    : model === 'wan2.1'
-    ? { image: imageUrl, prompt, num_frames: 81 }
-    : { image: imageUrl, prompt }
-
+export async function generateImageToVideo({ imageUrl, prompt, model = 'wan2.1', duration = 5, aspectRatio = '16:9' }, progressCb) {
+  let input
+  if (model === 'svd') {
+    input = { input_image: imageUrl, video_length: 14, sizing_strategy: 'maintain_aspect_ratio' }
+  } else if (model === 'wan2.1') {
+    input = { image: imageUrl, prompt, num_frames: 81 }
+  } else {
+    input = { image: imageUrl, prompt }
+  }
   return run(model, input, progressCb)
 }
 
-export async function generateTextToVideo({ prompt, model = 'cogvideox' }, progressCb) {
-  const input = model === 'cogvideox'
-    ? { prompt, num_frames: 49, guidance_scale: 6 }
-    : { prompt }
+export async function generateTextToVideo({ prompt, model = 'cogvideox', duration = 5, aspectRatio = '16:9', negativePrompt }, progressCb) {
+  let input
+  const numFrames = Math.ceil(duration * 24)
+
+  if (model === 'cogvideox') {
+    input = { prompt, num_frames: Math.min(numFrames, 49), guidance_scale: 6 }
+  } else if (model === 'ltx-video') {
+    const [w, h] = aspectRatio === '9:16' ? [480, 832] : aspectRatio === '1:1' ? [512, 512] : [704, 480]
+    input = {
+      prompt,
+      negative_prompt: negativePrompt || 'worst quality, inconsistent motion, blurry, jittery, distorted',
+      width: w, height: h,
+      num_frames: Math.min(numFrames, 121),
+      guidance_scale: 3,
+      num_inference_steps: 40
+    }
+  } else if (model === 'hunyuanvideo') {
+    const [w, h] = aspectRatio === '9:16' ? [544, 960] : aspectRatio === '1:1' ? [720, 720] : [960, 544]
+    input = {
+      prompt,
+      width: w, height: h,
+      video_length: Math.min(numFrames + 1, 129),
+      num_inference_steps: 50,
+      guidance_scale: 6
+    }
+  } else if (model === 'mochi-1') {
+    input = {
+      prompt,
+      num_frames: Math.min(numFrames, 84),
+      seed: Math.floor(Math.random() * 2 ** 32)
+    }
+  } else {
+    input = { prompt }
+  }
 
   return run(model, input, progressCb)
 }
