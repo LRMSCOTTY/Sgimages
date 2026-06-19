@@ -38,6 +38,12 @@ export async function initDb() {
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS app_config (
+      key TEXT PRIMARY KEY,
+      value JSONB NOT NULL,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
   `)
 
   console.log('  Database initialized')
@@ -96,4 +102,54 @@ export async function deleteProject(id, userId) {
   const db = getDb()
   const res = await db.query(`DELETE FROM projects WHERE id = $1 AND user_id = $2`, [id, userId])
   return res.rowCount > 0
+}
+
+// ── Admin helpers ─────────────────────────────────────────
+export async function getStats() {
+  const db = getDb()
+  if (!db) return { users: 0, projects: 0, recentUsers: [] }
+  const [uRow, pRow, recent] = await Promise.all([
+    db.query(`SELECT COUNT(*) AS count FROM users`),
+    db.query(`SELECT COUNT(*) AS count FROM projects`),
+    db.query(`SELECT id, email, name, created_at FROM users ORDER BY created_at DESC LIMIT 5`)
+  ])
+  return {
+    users: parseInt(uRow.rows[0].count),
+    projects: parseInt(pRow.rows[0].count),
+    recentUsers: recent.rows
+  }
+}
+
+export async function listUsers(limit = 100) {
+  const db = getDb()
+  if (!db) return []
+  const res = await db.query(
+    `SELECT id, email, name, plan, created_at FROM users ORDER BY created_at DESC LIMIT $1`,
+    [limit]
+  )
+  return res.rows
+}
+
+export async function getConfig() {
+  const db = getDb()
+  if (!db) return {}
+  const res = await db.query(`SELECT key, value FROM app_config`)
+  return Object.fromEntries(res.rows.map(r => [r.key, r.value]))
+}
+
+export async function setConfig(key, value) {
+  const db = getDb()
+  if (!db) return
+  await db.query(
+    `INSERT INTO app_config (key, value, updated_at)
+     VALUES ($1, $2::jsonb, NOW())
+     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+    [key, JSON.stringify(value)]
+  )
+}
+
+export async function deleteConfig(key) {
+  const db = getDb()
+  if (!db) return
+  await db.query(`DELETE FROM app_config WHERE key = $1`, [key])
 }

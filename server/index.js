@@ -9,6 +9,7 @@ import videoRoutes from './routes/video.js'
 import directorRoutes from './routes/director.js'
 import storyboardRoutes from './routes/storyboard.js'
 import authRoutes from './routes/auth.js'
+import adminRoutes from './routes/admin.js'
 import { initDb, isDbAvailable } from './db/client.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -61,6 +62,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/video', videoRoutes)
 app.use('/api/director', directorRoutes)
 app.use('/api/storyboard', storyboardRoutes)
+app.use('/api/admin', adminRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {

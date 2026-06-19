@@ -1,6 +1,13 @@
 import * as jose from 'jose'
 import { findUserById, isDbAvailable } from '../db/client.js'
 
+export function isAdminEmail(email) {
+  const adminEmail = process.env.ADMIN_EMAIL
+  if (adminEmail) return email === adminEmail
+  // Dev mode: anonymous user is always admin for testing
+  return process.env.NODE_ENV !== 'production'
+}
+
 const JWT_EXPIRES = '30d'
 
 function getSecret() {
@@ -23,8 +30,7 @@ export async function verifyToken(token) {
 
 export async function requireAuth(req, res, next) {
   if (!isDbAvailable()) {
-    // Auth not configured — allow anonymous in dev mode
-    req.user = { id: 'anonymous', email: 'dev@local', name: 'Developer', plan: 'free' }
+    req.user = { id: 'anonymous', email: 'dev@local', name: 'Developer', plan: 'free', is_admin: true }
     return next()
   }
 
@@ -38,7 +44,7 @@ export async function requireAuth(req, res, next) {
     const payload = await verifyToken(token)
     const user = await findUserById(payload.userId)
     if (!user) return res.status(401).json({ error: 'User not found' })
-    req.user = user
+    req.user = { ...user, is_admin: isAdminEmail(user.email) }
     next()
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' })

@@ -11,6 +11,7 @@ import AdjustPanel from './components/AdjustPanel.jsx'
 import BackgroundPanel from './components/BackgroundPanel.jsx'
 import GenerativeEditPanel from './components/GenerativeEditPanel.jsx'
 import VideoStudio from './components/video/VideoStudio.jsx'
+import AdminDashboard from './components/admin/AdminDashboard.jsx'
 import { downloadDataURL } from './lib/imageUtils.js'
 
 const IMAGE_TOOLS = { generate: 'generate', adjust: 'adjust', background: 'background', generative: 'generative' }
@@ -35,6 +36,7 @@ export default function App() {
   }, [])
 
   const isVideoMode = tool === 'video'
+  const isAdminMode = tool === 'admin'
 
   const commit = useCallback((next) => {
     setPast((p) => (image ? [...p, image] : p))
@@ -91,7 +93,7 @@ export default function App() {
   }, [])
 
   const imagePanel = useMemo(() => {
-    if (isVideoMode) return null
+    if (isVideoMode || isAdminMode) return null
     const shared = { image, runTask, busy, setImage: commit }
     switch (tool) {
       case IMAGE_TOOLS.generate: return <GeneratePanel {...shared} />
@@ -117,6 +119,12 @@ export default function App() {
   }
 
   // Logged in — show the full app
+  if (isAdminMode) {
+    return (
+      <AdminDashboard user={user} onClose={() => setTool('generate')} />
+    )
+  }
+
   return (
     <div className="app">
       <Sidebar tool={tool} setTool={setTool} user={user} onLogout={clearAuth} />
