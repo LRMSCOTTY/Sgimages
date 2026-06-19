@@ -66,14 +66,9 @@ export async function getJobStatus(jobId) {
   return res.json()
 }
 
-export function subscribeJobSSE(jobId, onUpdate) {
-  if (jobId.startsWith('mock_')) return null
-  const es = new EventSource(`/api/video/jobs/${jobId}/stream`)
-  es.onmessage = (e) => {
-    try { onUpdate(JSON.parse(e.data)) } catch {}
-  }
-  es.onerror = () => es.close()
-  return () => es.close()
+export function subscribeJobSSE() {
+  // SSE not supported in serverless deployment; polling is used instead
+  return null
 }
 
 export async function uploadSourceImage(dataURL) {
@@ -161,14 +156,14 @@ export async function runJob(params, onProgress) {
       }
     })
 
-    // Fallback: poll every 5s if SSE fails
+    // Poll every 2s for job completion
     const poll = setInterval(async () => {
       const status = await getJobStatus(job.jobId)
       if (!status) return
       if (onProgress) onProgress(status.progress)
-      if (status.status === 'completed') { clearInterval(poll); close?.(); resolve(status.result) }
-      if (status.status === 'failed') { clearInterval(poll); close?.(); reject(new Error(status.error)) }
-    }, 5000)
+      if (status.status === 'completed') { clearInterval(poll); resolve(status.result) }
+      if (status.status === 'failed') { clearInterval(poll); reject(new Error(status.error)) }
+    }, 2000)
   })
 }
 
@@ -184,18 +179,13 @@ async function submitServerJob(endpoint, body) {
 
 async function waitForJob(jobId, onProgress) {
   return new Promise((resolve, reject) => {
-    const close = subscribeJobSSE(jobId, (update) => {
-      if (update.progress && onProgress) onProgress(update.progress)
-      if (update.status === 'completed') { close?.(); resolve(update.result) }
-      if (update.status === 'failed') { close?.(); reject(new Error(update.error || 'Job failed')) }
-    })
     const poll = setInterval(async () => {
       const status = await getJobStatus(jobId)
       if (!status) return
-      if (onProgress) onProgress(status.progress)
-      if (status.status === 'completed') { clearInterval(poll); close?.(); resolve(status.result) }
-      if (status.status === 'failed') { clearInterval(poll); close?.(); reject(new Error(status.error)) }
-    }, 5000)
+      if (onProgress && status.progress) onProgress(status.progress)
+      if (status.status === 'completed') { clearInterval(poll); resolve(status.result) }
+      if (status.status === 'failed') { clearInterval(poll); reject(new Error(status.error || 'Job failed')) }
+    }, 2000)
   })
 }
 

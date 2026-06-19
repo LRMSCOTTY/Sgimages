@@ -55,8 +55,8 @@ router.post('/login', dbRequired, async (req, res) => {
 
 // GET /api/auth/me
 router.get('/me', requireAuth, (req, res) => {
-  const { id, email, name, plan } = req.user
-  res.json({ id, email, name, plan })
+  const { id, email, name, plan, is_admin } = req.user
+  res.json({ id, email, name, plan, is_admin })
 })
 
 // POST /api/auth/logout (client-side, just for completeness)
