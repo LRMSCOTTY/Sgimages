@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { submitMultiModel, subscribeJobSSE } from '../../lib/videoAPI.js'
+import { submitMultiModel } from '../../lib/videoAPI.js'
 import { runMockJob } from '../../lib/mockVideoAI.js'
 import { useVideoStore } from '../../store/videoStore.js'
 
