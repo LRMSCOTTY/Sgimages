@@ -142,27 +142,14 @@ export async function runJob(params, onProgress) {
     return result
   }
 
-  // Real job: subscribe to SSE
+  // Real job: poll every 2s for completion
   return new Promise((resolve, reject) => {
-    const close = subscribeJobSSE(job.jobId, (update) => {
-      if (update.progress && onProgress) onProgress(update.progress)
-      if (update.status === 'completed') {
-        close?.()
-        resolve(update.result)
-      }
-      if (update.status === 'failed') {
-        close?.()
-        reject(new Error(update.error || 'Generation failed'))
-      }
-    })
-
-    // Poll every 2s for job completion
     const poll = setInterval(async () => {
       const status = await getJobStatus(job.jobId)
       if (!status) return
-      if (onProgress) onProgress(status.progress)
+      if (onProgress && status.progress) onProgress(status.progress)
       if (status.status === 'completed') { clearInterval(poll); resolve(status.result) }
-      if (status.status === 'failed') { clearInterval(poll); reject(new Error(status.error)) }
+      if (status.status === 'failed') { clearInterval(poll); reject(new Error(status.error || 'Generation failed')) }
     }, 2000)
   })
 }
