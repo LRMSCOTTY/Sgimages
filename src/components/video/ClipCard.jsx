@@ -16,7 +16,7 @@ const STATUS_ICONS = {
   failed: '✕'
 }
 
-export default function ClipCard({ clip, index, isActive, onSelect, onRemove, dragging, onDragStart, onDragOver, onDrop }) {
+export default function ClipCard({ clip, index, isActive, onSelect, onRemove, onExtend, dragging, onDragStart, onDragOver, onDrop }) {
   const model = clip.model?.replace('runway-gen3-', 'Runway ').replace('-dream-machine', ' Dream').replace('kling-v2', 'Kling').replace('wan2.1', 'Wan').split('-').map(w => w[0]?.toUpperCase() + w.slice(1)).join(' ')
 
   const thumbUrl = clip.result?.videoUrl || clip.sourceImageDataURL
@@ -56,6 +56,13 @@ export default function ClipCard({ clip, index, isActive, onSelect, onRemove, dr
           {STATUS_ICONS[clip.status] || '○'}
         </div>
       </div>
+      {clip.status === 'completed' && onExtend && (
+        <button
+          className="clip-extend"
+          onClick={e => { e.stopPropagation(); onExtend(clip) }}
+          title="Extend clip"
+        >+</button>
+      )}
       <button
         className="clip-remove"
         onClick={e => { e.stopPropagation(); onRemove(clip.id) }}

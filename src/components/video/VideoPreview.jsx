@@ -79,21 +79,27 @@ export default function VideoPreview({ clip, sourceImage }) {
     )
   }
 
+  const arClass = clip?.aspectRatio?.replace(':', '-') || '16-9'
+  const gradeFilter = clip?.colorGrade ? `var(--grade-${clip.colorGrade})` : 'none'
+
   return (
     <div className="vp-container">
       <div className="vp-stage">
-        <video
-          ref={videoRef}
-          src={videoUrl}
-          className="vp-video"
-          loop
-          playsInline
-          onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime || 0)}
-          onLoadedMetadata={() => setDuration(videoRef.current?.duration || 0)}
-          onEnded={() => setPlaying(false)}
-          onError={() => setError('Failed to load video')}
-        />
-        {error && <div className="vp-video-error">{error}</div>}
+        <div className={`vp-ar-box ar-${arClass}`}>
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            className="vp-video"
+            loop
+            playsInline
+            style={{ filter: gradeFilter }}
+            onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime || 0)}
+            onLoadedMetadata={() => setDuration(videoRef.current?.duration || 0)}
+            onEnded={() => setPlaying(false)}
+            onError={() => setError('Failed to load video')}
+          />
+          {error && <div className="vp-video-error">{error}</div>}
+        </div>
       </div>
       <div className="vp-controls">
         <button className="vp-play-btn" onClick={toggle}>

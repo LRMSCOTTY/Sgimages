@@ -75,16 +75,29 @@ export async function concatVideos(inputPaths, outputFilename) {
   })
 }
 
-export async function createSeamlessLoop(inputPath) {
+const LUT_FILTERS = {
+  'teal-orange': "curves=r='0/0 0.5/0.4 1/0.8':b='0/0 0.5/0.6 1/1',hue=s=1.2",
+  'thriller': "eq=saturation=0.3:contrast=1.2",
+  'warm-indie': "curves=r='0/0 1/1':g='0/0 1/0.9':b='0/0 1/0.8',eq=brightness=0.02",
+  'bleach-bypass': "eq=saturation=0.5:contrast=1.3:brightness=-0.05",
+  'cross-process': "curves=r='0/0 0.5/0.7 1/1':b='0/0.1 1/0.9',hue=s=1.4",
+  'kodachrome': "curves=r='0/0.05 1/1':g='0/0 1/0.88':b='0/0 1/0.78',eq=contrast=1.1",
+  'day-for-night': "curves=all='0/0 1/0.45',hue=s=0.3",
+  'cyberpunk': "hue=s=1.9,curves=r='0/0 0.5/0.4':b='0/0.1 1/1',eq=contrast=1.25"
+}
+
+export async function createSeamlessLoop(inputPath, crossfadeSec = 0.5) {
   const outPath = inputPath.replace(/\.\w+$/, `_loop_${uuidv4().slice(0, 8)}.mp4`)
+  const info = await getVideoInfo(inputPath)
+  const dur = info.duration || 5
+  const offset = Math.max(0.1, dur - crossfadeSec)
 
   return new Promise((resolve, reject) => {
-    // Crossfade last 10% of clip back to beginning for seamless loop
     ffmpeg(inputPath)
       .complexFilter([
         '[0:v]split=2[main][copy]',
         '[copy]reverse[rev]',
-        `[main][rev]xfade=transition=fade:duration=0.5:offset=3.5[out]`
+        `[main][rev]xfade=transition=fade:duration=${crossfadeSec}:offset=${offset}[out]`
       ])
       .outputOptions(['-map', '[out]', '-c:v', 'libx264', '-crf', '23'])
       .output(outPath)
@@ -96,11 +109,25 @@ export async function createSeamlessLoop(inputPath) {
 
 export async function applyColorGrade(inputPath, lutName) {
   const outPath = inputPath.replace(/\.\w+$/, `_graded_${uuidv4().slice(0, 8)}.mp4`)
-  const lutPath = `./server/assets/luts/${lutName}.cube`
+  const filter = LUT_FILTERS[lutName]
+  if (!filter) throw new Error(`Unknown grade: ${lutName}`)
 
   return new Promise((resolve, reject) => {
     ffmpeg(inputPath)
-      .videoFilters(`lut3d=${lutPath}`)
+      .videoFilters(filter)
+      .output(outPath)
+      .on('end', () => resolve(outPath))
+      .on('error', reject)
+      .run()
+  })
+}
+
+export async function extractLastFrame(videoPath) {
+  const outPath = videoPath.replace(/\.\w+$/, `_lastframe_${uuidv4().slice(0, 8)}.jpg`)
+  return new Promise((resolve, reject) => {
+    ffmpeg(videoPath)
+      .inputOptions(['-sseof', '-0.1'])
+      .frames(1)
       .output(outPath)
       .on('end', () => resolve(outPath))
       .on('error', reject)

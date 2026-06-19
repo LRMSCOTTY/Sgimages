@@ -23,11 +23,12 @@ async function headers() {
   }
 }
 
-export async function generateImageToVideo({ imageUrl, prompt, duration = 5 }) {
+export async function generateImageToVideo({ imageUrl, prompt, duration = 5, motionPath }) {
+  const finalPrompt = motionPath?.directionString ? `${prompt}. Camera: ${motionPath.directionString}` : prompt
   const body = {
     model_name: 'kling-v2',
     image: imageUrl,
-    prompt,
+    prompt: finalPrompt,
     duration: String(Math.min(duration, 10))
   }
 
@@ -41,11 +42,12 @@ export async function generateImageToVideo({ imageUrl, prompt, duration = 5 }) {
   return pollTask(data.task_id)
 }
 
-export async function generateTextToVideo({ prompt, duration = 5, aspectRatio = '16:9' }) {
+export async function generateTextToVideo({ prompt, duration = 5, aspectRatio = '16:9', motionPath }) {
   const ratioMap = { '16:9': '16:9', '9:16': '9:16', '1:1': '1:1' }
+  const finalPrompt = motionPath?.directionString ? `${prompt}. Camera: ${motionPath.directionString}` : prompt
   const body = {
     model_name: 'kling-v2',
-    prompt,
+    prompt: finalPrompt,
     duration: String(Math.min(duration, 10)),
     aspect_ratio: ratioMap[aspectRatio] || '16:9'
   }

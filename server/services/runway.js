@@ -11,11 +11,11 @@ function headers() {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
-export async function generateTextToVideo({ prompt, duration = 5, aspectRatio = '16:9' }) {
+export async function generateTextToVideo({ prompt, duration = 5, aspectRatio = '16:9', motionPath }) {
   const ratio = aspectRatio === '9:16' ? '720:1280' : aspectRatio === '1:1' ? '960:960' : '1280:720'
   const body = {
     model: 'gen3a_turbo',
-    prompt_text: prompt,
+    prompt_text: buildPrompt(prompt, null, motionPath),
     duration: Math.min(duration, 10),
     ratio
   }
@@ -30,15 +30,16 @@ export async function generateTextToVideo({ prompt, duration = 5, aspectRatio = 
   return pollTask(id)
 }
 
-export async function generateImageToVideo({ imageUrl, prompt, duration = 5, aspectRatio = '16:9', cameraMotion }) {
+export async function generateImageToVideo({ imageUrl, prompt, duration = 5, aspectRatio = '16:9', cameraMotion, motionPath, endImageUrl }) {
   const ratio = aspectRatio === '9:16' ? '720:1280' : aspectRatio === '1:1' ? '960:960' : '1280:720'
   const body = {
     model: 'gen3a_turbo',
     prompt_image: imageUrl,
-    prompt_text: buildPrompt(prompt, cameraMotion),
+    prompt_text: buildPrompt(prompt, cameraMotion, motionPath),
     duration: Math.min(duration, 10),
     ratio
   }
+  if (endImageUrl) body.last_frame_url = endImageUrl
 
   const res = await fetch(`${API_BASE}/image_to_video`, {
     method: 'POST',
@@ -68,7 +69,9 @@ async function pollTask(taskId, maxWaitMs = 180_000) {
   throw new Error('Runway generation timed out')
 }
 
-function buildPrompt(prompt, cameraMotion) {
-  if (!cameraMotion) return prompt
-  return `${prompt}. ${cameraMotion.promptAppend || ''}`
+function buildPrompt(prompt, cameraMotion, motionPath) {
+  let out = prompt
+  if (cameraMotion?.promptAppend) out += `. ${cameraMotion.promptAppend}`
+  if (motionPath?.directionString) out += `. Camera: ${motionPath.directionString}`
+  return out
 }

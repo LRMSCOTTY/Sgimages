@@ -1,26 +1,25 @@
 import { useState } from 'react'
-import { generateMockVideo } from '../../lib/mockVideoAI.js'
+import { callLoopForge } from '../../lib/videoAPI.js'
 
 export default function LoopForge({ clip, onUpdate }) {
   const [crossfade, setCrossfade] = useState(10)
   const [busy, setBusy] = useState(false)
-  const [loopUrl, setLoopUrl] = useState(clip?.result?.videoUrl || null)
+  const [loopUrl, setLoopUrl] = useState(null)
+  const [error, setError] = useState(null)
 
   const hasVideo = !!(clip?.result?.videoUrl)
 
   const createLoop = async () => {
     if (!hasVideo) return
     setBusy(true)
+    setError(null)
     try {
-      // In mock mode: generate a slightly modified version representing the loop
-      const url = await generateMockVideo({
-        prompt: `${clip.prompt} [SEAMLESS LOOP]`,
-        duration: clip.duration,
-        aspectRatio: clip.aspectRatio,
-        model: 'loop-forge'
-      })
+      const result = await callLoopForge(clip.result.videoUrl, null)
+      const url = result.videoUrl
       setLoopUrl(url)
       onUpdate({ ...clip.result, videoUrl: url, isLoop: true })
+    } catch (e) {
+      setError(e.message)
     } finally {
       setBusy(false)
     }
@@ -41,7 +40,7 @@ export default function LoopForge({ clip, onUpdate }) {
 
       {hasVideo && (
         <>
-          <label className="field-label">Crossfade Duration: {crossfade}%</label>
+          <label className="field-label">Crossfade: {crossfade}%</label>
           <input
             type="range" min={5} max={30} value={crossfade}
             onChange={e => setCrossfade(+e.target.value)}
@@ -55,11 +54,11 @@ export default function LoopForge({ clip, onUpdate }) {
           <div className="loop-algo-cards">
             <div className="loop-algo active">
               <div className="loop-algo-name">FFmpeg Crossfade</div>
-              <div className="loop-algo-desc">Fast, blends end→start frames. Great for most content.</div>
+              <div className="loop-algo-desc">Blends end→start frames. Fast and reliable.</div>
             </div>
             <div className="loop-algo">
               <div className="loop-algo-name">AI Bridge</div>
-              <div className="loop-algo-desc">Generates a connecting clip. Higher quality, takes longer.</div>
+              <div className="loop-algo-desc">Generates a connecting clip. Higher quality.</div>
               <span className="badge">Coming Soon</span>
             </div>
           </div>
@@ -67,6 +66,8 @@ export default function LoopForge({ clip, onUpdate }) {
           <button className="primary-btn full" onClick={createLoop} disabled={busy}>
             {busy ? '🔄 Forging loop...' : '🔁 Create Seamless Loop'}
           </button>
+
+          {error && <div className="stage-error">{error}</div>}
 
           {loopUrl && (
             <div className="loop-result">

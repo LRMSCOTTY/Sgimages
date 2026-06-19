@@ -18,19 +18,37 @@ const storage = multer.diskStorage({
   }
 })
 
-const fileFilter = (req, file, cb) => {
+const imageFilter = (req, file, cb) => {
   const ok = /^image\/(jpeg|png|webp|gif)$/.test(file.mimetype)
   cb(ok ? null : new Error('Only image files accepted'), ok)
 }
 
+const videoFilter = (req, file, cb) => {
+  const ok = /^video\/(mp4|webm|quicktime|x-msvideo)$/.test(file.mimetype)
+  cb(ok ? null : new Error('Only video files accepted'), ok)
+}
+
 export const uploadImage = multer({
   storage,
-  fileFilter,
-  limits: { fileSize: 20 * 1024 * 1024 } // 20MB
+  fileFilter: imageFilter,
+  limits: { fileSize: 20 * 1024 * 1024 }
 }).single('image')
+
+export const uploadVideo = multer({
+  storage,
+  fileFilter: videoFilter,
+  limits: { fileSize: 200 * 1024 * 1024 }
+}).single('video')
 
 export function handleUpload(req, res, next) {
   uploadImage(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message })
+    next()
+  })
+}
+
+export function handleVideoUpload(req, res, next) {
+  uploadVideo(req, res, (err) => {
     if (err) return res.status(400).json({ error: err.message })
     next()
   })

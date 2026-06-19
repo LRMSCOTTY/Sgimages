@@ -1,23 +1,24 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useVideoStore, MODELS, DURATIONS, ASPECT_RATIOS } from '../../store/videoStore.js'
-import { runJob, uploadSourceImage } from '../../lib/videoAPI.js'
+import { runJob, uploadSourceImage, uploadSourceVideo } from '../../lib/videoAPI.js'
 import CameraRigSelector from './CameraRigSelector.jsx'
 import PromptKeyframes from './PromptKeyframes.jsx'
-import ColorGradePanel from './ColorGradePanel.jsx'
 import UploadButton from '../UploadButton.jsx'
 
 const MODES = [
   { id: 'text-to-video', label: 'Text → Video', icon: '✍️' },
   { id: 'image-to-video', label: 'Image → Video', icon: '🖼' },
-  { id: 'multi-angle', label: 'Multi-Angle', icon: '🔄' }
+  { id: 'keyframe', label: 'Keyframe', icon: '⟷' },
+  { id: 'video-to-video', label: 'Vid→Vid', icon: '🔄' },
+  { id: 'multi-angle', label: 'Multi-Angle', icon: '⟳' }
 ]
 
 export default function ClipBuilder({ onBattle }) {
-  const { getActiveClip, updateClip } = useVideoStore()
+  const { getActiveClip, updateClip, referenceImages } = useVideoStore()
   const clip = getActiveClip()
   const [busy, setBusy] = useState(false)
-  const [showGrade, setShowGrade] = useState(false)
-  const [showMotion, setShowMotion] = useState(false)
+  const [styleStrength, setStyleStrength] = useState(70)
+  const videoInputRef = useRef(null)
 
   const update = useCallback((key, val) => {
     if (!clip) return
@@ -30,21 +31,37 @@ export default function ClipBuilder({ onBattle }) {
     updateClip(clip.id, { status: 'queued', _progress: 0, _error: null })
     try {
       let sourceImageUrl = null
+      let sourceImageEndUrl = null
+
       if (clip.sourceImageDataURL && clip.mode !== 'text-to-video') {
         sourceImageUrl = await uploadSourceImage(clip.sourceImageDataURL)
       }
+      if (clip.sourceImageEndDataURL && clip.mode === 'keyframe') {
+        sourceImageEndUrl = await uploadSourceImage(clip.sourceImageEndDataURL)
+      }
+
+      const clipRefs = (clip.referenceIds || [])
+        .map(id => referenceImages.find(r => r.id === id))
+        .filter(Boolean)
+        .map(r => ({ tag: r.tag, label: r.label, url: r.uploadedUrl || null }))
+
       const result = await runJob({
         model: clip.model,
         mode: clip.mode,
-        prompt: clip.prompt,
+        prompt: clip.prompt + (clip.mode === 'video-to-video' ? ` Style strength: ${styleStrength}%` : ''),
         negativePrompt: clip.negativePrompt,
         sourceImageUrl,
+        sourceImageEndUrl,
         duration: clip.duration,
         aspectRatio: clip.aspectRatio,
         cameraRig: clip.cameraRig,
         motionPath: clip.motionPath,
+        motionBrushRegions: clip.motionBrushRegions,
         promptKeyframes: clip.promptKeyframes,
-        loopMode: clip.loopMode
+        loopMode: clip.loopMode,
+        effects: clip.effects,
+        referenceImages: clipRefs,
+        soundDesign: clip.soundDesign
       }, (pct) => updateClip(clip.id, { status: 'processing', _progress: pct }))
       updateClip(clip.id, { status: 'completed', result, _progress: 100 })
     } catch (e) {
@@ -52,6 +69,19 @@ export default function ClipBuilder({ onBattle }) {
     } finally {
       setBusy(false)
     }
+  }
+
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const url = await uploadSourceVideo(file)
+      update('sourceImageUrl', url)
+      update('_sourceVideoName', file.name)
+    } catch (err) {
+      console.error('Video upload failed:', err)
+    }
+    e.target.value = ''
   }
 
   if (!clip) {
@@ -93,21 +123,65 @@ export default function ClipBuilder({ onBattle }) {
         ))}
       </div>
 
-      {/* Source image for image-to-video */}
-      {clip.mode !== 'text-to-video' && (
+      {/* Keyframe mode: start + end image */}
+      {clip.mode === 'keyframe' && (
+        <>
+          <label className="field-label">Keyframe Images</label>
+          <div className="keyframe-pair">
+            <div className="keyframe-slot">
+              <div className="keyframe-label">Start Frame</div>
+              {clip.sourceImageDataURL
+                ? <img src={clip.sourceImageDataURL} alt="Start" className="source-thumb" />
+                : <div className="source-img-empty">No image</div>}
+              <UploadButton onImage={dataURL => update('sourceImageDataURL', dataURL)} label="Upload" disabled={isGenerating} />
+            </div>
+            <div className="keyframe-arrow">→</div>
+            <div className="keyframe-slot">
+              <div className="keyframe-label">End Frame</div>
+              {clip.sourceImageEndDataURL
+                ? <img src={clip.sourceImageEndDataURL} alt="End" className="source-thumb" />
+                : <div className="source-img-empty">No image</div>}
+              <UploadButton onImage={dataURL => update('sourceImageEndDataURL', dataURL)} label="Upload" disabled={isGenerating} />
+            </div>
+          </div>
+          <p className="hint-text">Luma will interpolate between these two images.</p>
+        </>
+      )}
+
+      {/* Image source for image-to-video */}
+      {(clip.mode === 'image-to-video' || clip.mode === 'multi-angle') && (
         <>
           <label className="field-label">Source Image</label>
           <div className="source-img-area">
             {clip.sourceImageDataURL
               ? <img src={clip.sourceImageDataURL} alt="Source" className="source-thumb" />
-              : <div className="source-img-empty">No source image</div>
-            }
+              : <div className="source-img-empty">No source image</div>}
             <UploadButton
               onImage={dataURL => update('sourceImageDataURL', dataURL)}
               label={clip.sourceImageDataURL ? '↺ Replace' : '+ Upload Image'}
               disabled={isGenerating}
             />
           </div>
+        </>
+      )}
+
+      {/* Video source for video-to-video */}
+      {clip.mode === 'video-to-video' && (
+        <>
+          <label className="field-label">Source Video</label>
+          <div className="source-img-area">
+            {clip._sourceVideoName
+              ? <div className="source-img-empty" style={{ color: 'var(--accent)' }}>📹 {clip._sourceVideoName}</div>
+              : <div className="source-img-empty">No source video</div>}
+            <button className="ghost-btn" onClick={() => videoInputRef.current?.click()} disabled={isGenerating}>
+              + Upload Video
+            </button>
+            <input ref={videoInputRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={handleVideoUpload} />
+          </div>
+          <label className="field-label">Style Strength: {styleStrength}%</label>
+          <input type="range" min={0} max={100} value={styleStrength}
+            onChange={e => setStyleStrength(+e.target.value)} disabled={isGenerating} />
+          <p className="hint-text">Higher = more transformation, lower = preserve original motion.</p>
         </>
       )}
 
@@ -138,9 +212,7 @@ export default function ClipBuilder({ onBattle }) {
             className={`dur-btn ${clip.duration === d ? 'active' : ''}`}
             onClick={() => update('duration', d)}
             disabled={isGenerating}
-          >
-            {d}s
-          </button>
+          >{d}s</button>
         ))}
       </div>
 
@@ -153,9 +225,7 @@ export default function ClipBuilder({ onBattle }) {
             className={`chip ${clip.aspectRatio === ar ? 'active' : ''}`}
             onClick={() => update('aspectRatio', ar)}
             disabled={isGenerating}
-          >
-            {ar}
-          </button>
+          >{ar}</button>
         ))}
       </div>
 
@@ -180,13 +250,9 @@ export default function ClipBuilder({ onBattle }) {
 
       {/* Camera Rig */}
       <label className="field-label">Camera Rig</label>
-      <CameraRigSelector
-        value={clip.cameraRig}
-        onChange={rig => update('cameraRig', rig)}
-        compact
-      />
+      <CameraRigSelector value={clip.cameraRig} onChange={rig => update('cameraRig', rig)} compact />
 
-      {/* Advanced */}
+      {/* Loop toggle */}
       <div className="advanced-toggles">
         <button
           className={`ghost-btn ${clip.loopMode ? 'active' : ''}`}
@@ -195,17 +261,7 @@ export default function ClipBuilder({ onBattle }) {
         >
           {clip.loopMode ? '🔁 Loop: ON' : '🔁 Loop: OFF'}
         </button>
-        <button className="ghost-btn" onClick={() => setShowGrade(s => !s)}>
-          🎨 Color Grade {clip.colorGrade ? '●' : ''}
-        </button>
       </div>
-
-      {showGrade && (
-        <ColorGradePanel
-          value={clip.colorGrade}
-          onChange={g => update('colorGrade', g)}
-        />
-      )}
 
       {/* Negative prompt */}
       <label className="field-label">Negative Prompt</label>
@@ -219,6 +275,20 @@ export default function ClipBuilder({ onBattle }) {
         disabled={isGenerating}
       />
 
+      {/* Active effects summary */}
+      {clip.effects?.length > 0 && (
+        <div className="active-effects-row">
+          {clip.effects.map(fx => (
+            <span key={fx} className="effect-tag">{fx}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Active sound summary */}
+      {clip.soundDesign?.mood && clip.soundDesign.mood !== 'silence' && (
+        <div className="sound-badge">🔊 {clip.soundDesign.mood.replace(/-/g, ' ')}</div>
+      )}
+
       {/* Actions */}
       <div className="clip-actions">
         <button
@@ -226,9 +296,7 @@ export default function ClipBuilder({ onBattle }) {
           onClick={() => onBattle(clip)}
           disabled={isGenerating || !clip.prompt}
           title="Compare 3 models side by side"
-        >
-          ⚔️ Battle
-        </button>
+        >⚔️ Battle</button>
         <button
           className="primary-btn"
           style={{ flex: 2 }}

@@ -5,11 +5,16 @@ import VideoPreview from './VideoPreview.jsx'
 import ClipBuilder from './ClipBuilder.jsx'
 import DirectorPanel from './DirectorPanel.jsx'
 import MotionPathCanvas from './MotionPathCanvas.jsx'
+import MotionBrush from './MotionBrush.jsx'
 import StoryboardView from './StoryboardView.jsx'
 import MultiModelBattle from './MultiModelBattle.jsx'
 import ShotGrammarLib from './ShotGrammarLib.jsx'
 import LoopForge from './LoopForge.jsx'
 import ColorGradePanel from './ColorGradePanel.jsx'
+import EffectsLibrary from './EffectsLibrary.jsx'
+import SoundPanel from './SoundPanel.jsx'
+import ReferencePanel from './ReferencePanel.jsx'
+import MovieBuilder from './MovieBuilder.jsx'
 import JobStatusBar from './JobStatusBar.jsx'
 import { CAMERA_RIGS } from './CameraRigSelector.jsx'
 
@@ -17,13 +22,18 @@ const PANELS = [
   { id: 'clip', label: '🎬 Clip', title: 'Clip Builder' },
   { id: 'director', label: '🎭 Director', title: 'AI Director' },
   { id: 'grammar', label: '📚 Grammar', title: 'Shot Grammar' },
+  { id: 'fx', label: '✨ FX', title: 'Effects' },
   { id: 'grade', label: '🎨 Grade', title: 'Color Grade' },
-  { id: 'loop', label: '🔁 Loop', title: 'Loop Forge' }
+  { id: 'sound', label: '🔊 Sound', title: 'Sound Design' },
+  { id: 'ref', label: '🖼 Ref', title: 'References' },
+  { id: 'loop', label: '🔁 Loop', title: 'Loop Forge' },
+  { id: 'movie', label: '🎞 Movie', title: 'Movie Builder' }
 ]
 
 const STAGES = [
   { id: 'preview', label: '▶ Preview' },
-  { id: 'motion', label: '✏️ Motion Path' },
+  { id: 'camera', label: '✏️ Camera Path' },
+  { id: 'brush', label: '🖌 Motion Brush' },
   { id: 'battle', label: '⚔️ Battle' },
   { id: 'storyboard', label: '🎞 Storyboard' }
 ]
@@ -63,6 +73,10 @@ export default function VideoStudio({ sourceImage }) {
     if (clip) updateClip(clip.id, { motionPath })
   }, [clip, updateClip])
 
+  const handleBrushUpdate = useCallback((regions) => {
+    if (clip) updateClip(clip.id, { motionBrushRegions: regions })
+  }, [clip, updateClip])
+
   const basePrompt = clips.map(c => c.prompt).filter(Boolean)[0] || ''
 
   const rightPanel = () => {
@@ -73,26 +87,49 @@ export default function VideoStudio({ sourceImage }) {
           <ShotGrammarLib basePrompt={basePrompt} onApply={handleGrammarApply} />
         </div>
       )
+      case 'fx': return (
+        <EffectsLibrary
+          value={clip?.effects || []}
+          onChange={fx => clip && updateClip(clip.id, { effects: fx })}
+        />
+      )
       case 'grade': return (
         <div className="panel-inner">
           <ColorGradePanel
             value={clip?.colorGrade || null}
             onChange={g => clip && updateClip(clip.id, { colorGrade: g })}
+            clip={clip}
+            onApplyResult={result => clip && updateClip(clip.id, { result: { ...clip.result, ...result } })}
           />
         </div>
       )
+      case 'sound': return (
+        <SoundPanel
+          value={clip?.soundDesign}
+          onChange={sd => clip && updateClip(clip.id, { soundDesign: sd })}
+        />
+      )
+      case 'ref': return <ReferencePanel />
       case 'loop': return <LoopForge clip={clip} onUpdate={r => clip && updateClip(clip.id, { result: r })} />
+      case 'movie': return <MovieBuilder />
       default: return <ClipBuilder onBattle={handleBattle} />
     }
   }
 
   const centerStage = () => {
     switch (stageMode) {
-      case 'motion': return (
+      case 'camera': return (
         <MotionPathCanvas
           sourceImage={clip?.sourceImageDataURL || sourceImage}
           value={clip?.motionPath}
           onChange={handleMotionUpdate}
+        />
+      )
+      case 'brush': return (
+        <MotionBrush
+          sourceImage={clip?.sourceImageDataURL || sourceImage}
+          value={clip?.motionBrushRegions}
+          onChange={handleBrushUpdate}
         />
       )
       case 'battle': return battleClip ? (
@@ -128,6 +165,8 @@ export default function VideoStudio({ sourceImage }) {
           {clip ? (
             <span className="studio-clip-info">
               Active: <strong>{clip.model?.split('-')[0]}</strong> · {clip.duration}s · {clip.aspectRatio}
+              {clip.effects?.length > 0 && ` · ${clip.effects.length} FX`}
+              {clip.soundDesign?.mood && clip.soundDesign.mood !== 'silence' && ` · 🔊`}
             </span>
           ) : <span className="studio-clip-info">No clip selected</span>}
         </div>

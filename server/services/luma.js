@@ -9,9 +9,9 @@ function headers() {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 
-export async function generateTextToVideo({ prompt, duration = 5, aspectRatio = '16:9', cameraMotion }) {
+export async function generateTextToVideo({ prompt, duration = 5, aspectRatio = '16:9', cameraMotion, motionPath }) {
   const body = {
-    prompt: buildPrompt(prompt, cameraMotion),
+    prompt: buildPrompt(prompt, cameraMotion, motionPath),
     loop: false,
     aspect_ratio: aspectRatio
   }
@@ -26,9 +26,9 @@ export async function generateTextToVideo({ prompt, duration = 5, aspectRatio = 
   return pollGeneration(id)
 }
 
-export async function generateImageToVideo({ imageUrl, prompt, duration = 5, aspectRatio = '16:9', cameraMotion }) {
+export async function generateImageToVideo({ imageUrl, prompt, duration = 5, aspectRatio = '16:9', cameraMotion, motionPath }) {
   const body = {
-    prompt: buildPrompt(prompt, cameraMotion),
+    prompt: buildPrompt(prompt, cameraMotion, motionPath),
     keyframes: {
       frame0: { type: 'image', url: imageUrl }
     },
@@ -41,6 +41,26 @@ export async function generateImageToVideo({ imageUrl, prompt, duration = 5, asp
     body: JSON.stringify(body)
   })
   if (!res.ok) throw new Error(`Luma image_to_video failed: ${res.status}`)
+  const { id } = await res.json()
+  return pollGeneration(id)
+}
+
+export async function generateKeyframeVideo({ startImageUrl, endImageUrl, prompt, aspectRatio = '16:9' }) {
+  const body = {
+    prompt,
+    keyframes: {
+      frame0: { type: 'image', url: startImageUrl },
+      frame1: { type: 'image', url: endImageUrl }
+    },
+    aspect_ratio: aspectRatio
+  }
+
+  const res = await fetch(`${API_BASE}/generations`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify(body)
+  })
+  if (!res.ok) throw new Error(`Luma keyframe_video failed: ${res.status}`)
   const { id } = await res.json()
   return pollGeneration(id)
 }
@@ -63,10 +83,12 @@ async function pollGeneration(genId, maxWaitMs = 180_000) {
   throw new Error('Luma generation timed out')
 }
 
-function buildPrompt(prompt, cameraMotion) {
-  if (!cameraMotion) return prompt
-  const lumaMotion = LUMA_MOTION_MAP[cameraMotion.id] || cameraMotion.promptAppend || ''
-  return lumaMotion ? `${prompt}. Camera: ${lumaMotion}` : prompt
+function buildPrompt(prompt, cameraMotion, motionPath) {
+  let out = prompt
+  const lumaMotion = LUMA_MOTION_MAP[cameraMotion?.id] || cameraMotion?.promptAppend || ''
+  if (lumaMotion) out += `. Camera: ${lumaMotion}`
+  if (motionPath?.directionString) out += `. Motion: ${motionPath.directionString}`
+  return out
 }
 
 const LUMA_MOTION_MAP = {

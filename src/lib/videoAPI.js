@@ -172,6 +172,98 @@ export async function runJob(params, onProgress) {
   })
 }
 
+async function submitServerJob(endpoint, body) {
+  const res = await fetch(`/api/video/${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+  if (!res.ok) throw new Error(`Server error ${res.status}`)
+  return res.json()
+}
+
+async function waitForJob(jobId, onProgress) {
+  return new Promise((resolve, reject) => {
+    const close = subscribeJobSSE(jobId, (update) => {
+      if (update.progress && onProgress) onProgress(update.progress)
+      if (update.status === 'completed') { close?.(); resolve(update.result) }
+      if (update.status === 'failed') { close?.(); reject(new Error(update.error || 'Job failed')) }
+    })
+    const poll = setInterval(async () => {
+      const status = await getJobStatus(jobId)
+      if (!status) return
+      if (onProgress) onProgress(status.progress)
+      if (status.status === 'completed') { clearInterval(poll); close?.(); resolve(status.result) }
+      if (status.status === 'failed') { clearInterval(poll); close?.(); reject(new Error(status.error)) }
+    }, 5000)
+  })
+}
+
+export async function callLoopForge(videoUrl, onProgress) {
+  const useMock = FORCE_MOCK || !(await checkServer())
+  if (useMock) {
+    if (onProgress) onProgress(50)
+    await new Promise(r => setTimeout(r, 2000))
+    if (onProgress) onProgress(100)
+    return { videoUrl }
+  }
+  const { jobId } = await submitServerJob('loop', { videoUrl })
+  return waitForJob(jobId, onProgress)
+}
+
+export async function callColorGrade(videoUrl, grade, onProgress) {
+  const useMock = FORCE_MOCK || !(await checkServer())
+  if (useMock) {
+    if (onProgress) onProgress(50)
+    await new Promise(r => setTimeout(r, 1500))
+    if (onProgress) onProgress(100)
+    return { videoUrl }
+  }
+  const { jobId } = await submitServerJob('grade', { videoUrl, grade })
+  return waitForJob(jobId, onProgress)
+}
+
+export async function composeProject(clipUrls, outputName, onProgress) {
+  const useMock = FORCE_MOCK || !(await checkServer())
+  if (useMock) {
+    if (onProgress) onProgress(50)
+    await new Promise(r => setTimeout(r, 2000))
+    if (onProgress) onProgress(100)
+    return { videoUrl: clipUrls[0] }
+  }
+  const { jobId } = await submitServerJob('compose', { clipUrls, outputName })
+  return waitForJob(jobId, onProgress)
+}
+
+export async function callExtend(clip, onProgress) {
+  const useMock = FORCE_MOCK || !(await checkServer())
+  if (useMock) {
+    if (onProgress) onProgress(30)
+    const result = await runMockJob({ ...clip, mode: 'image-to-video' }, onProgress)
+    return result
+  }
+  const { jobId } = await submitServerJob('extend', {
+    videoUrl: clip.result?.videoUrl,
+    model: clip.model,
+    prompt: clip.prompt,
+    duration: clip.duration,
+    aspectRatio: clip.aspectRatio
+  })
+  return waitForJob(jobId, onProgress)
+}
+
+export async function uploadSourceVideo(file) {
+  const useMock = FORCE_MOCK || !(await checkServer())
+  if (useMock) return URL.createObjectURL(file)
+
+  const form = new FormData()
+  form.append('video', file, file.name)
+  const res = await fetch('/api/video/upload-video', { method: 'POST', body: form })
+  if (!res.ok) throw new Error('Video upload failed')
+  const { url } = await res.json()
+  return url
+}
+
 function getMockShotPlan(description) {
   const lower = (description || '').toLowerCase()
   const isPerson = /person|people|man|woman|character/.test(lower)

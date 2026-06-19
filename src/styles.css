@@ -1017,3 +1017,212 @@ input[type='range']::-moz-range-thumb {
 
 /* Chip active state (for mode-like chips) */
 .chip.active { border-color: var(--video-accent); color: var(--video-accent); background: rgba(255,107,53,0.1); }
+
+/* ===========================
+   Aspect Ratio Video Preview
+   =========================== */
+.vp-ar-box { position: relative; overflow: hidden; background: #000; }
+.vp-ar-box.ar-16-9 { aspect-ratio: 16/9; width: 100%; }
+.vp-ar-box.ar-9-16 { aspect-ratio: 9/16; max-height: calc(100vh - 280px); margin: 0 auto; }
+.vp-ar-box.ar-1-1  { aspect-ratio: 1/1; width: min(100%, calc(100vh - 280px)); margin: 0 auto; }
+.vp-ar-box .vp-video { width: 100%; height: 100%; object-fit: cover; }
+
+/* Color grade CSS preview filters (used on <video> element) */
+:root {
+  --grade-teal-orange: saturate(1.2) hue-rotate(5deg) sepia(0.1);
+  --grade-thriller: saturate(0.3) contrast(1.2);
+  --grade-warm-indie: sepia(0.3) saturate(1.2) brightness(1.05);
+  --grade-bleach-bypass: saturate(0.5) contrast(1.3) brightness(0.95);
+  --grade-cross-process: saturate(1.4) hue-rotate(20deg);
+  --grade-kodachrome: sepia(0.2) saturate(1.3) contrast(1.1);
+  --grade-day-for-night: brightness(0.45) saturate(0.3) hue-rotate(200deg);
+  --grade-cyberpunk: saturate(1.9) contrast(1.25) hue-rotate(280deg);
+}
+
+/* ===========================
+   Clip Extend Button
+   =========================== */
+.clip-extend {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--video-accent);
+  color: white;
+  border: none;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  transition: transform 0.15s;
+}
+.clip-card:hover .clip-extend { display: flex; }
+.clip-extend:hover { transform: scale(1.15); }
+
+/* ===========================
+   Timeline header actions
+   =========================== */
+.timeline-header { flex-wrap: wrap; gap: 6px; }
+.timeline-name-wrap { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.timeline-name-input {
+  background: var(--bg-3);
+  border: 1px solid var(--video-accent);
+  color: var(--text);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  width: 180px;
+}
+.timeline-label { cursor: pointer; }
+.timeline-label:hover { color: var(--video-accent); }
+.timeline-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.timeline-export:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ===========================
+   Effects Library
+   =========================== */
+.effects-library { padding: 12px 16px; }
+.effect-category { margin-bottom: 16px; }
+.effect-category-name { font-size: 10px; font-weight: 700; color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+.effects-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.effect-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; padding: 8px 4px;
+  background: var(--bg-3); border: 1px solid var(--border); border-radius: 8px;
+  cursor: pointer; transition: all 0.15s; color: var(--text);
+}
+.effect-btn:hover { border-color: var(--video-accent); }
+.effect-btn.active { border-color: var(--video-accent); background: rgba(255,107,53,0.15); }
+.effect-icon { font-size: 18px; }
+.effect-label { font-size: 10px; color: var(--text-dim); text-align: center; line-height: 1.2; }
+.effect-btn.active .effect-label { color: var(--video-accent); }
+.active-effects-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.effect-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(255,107,53,0.15); border: 1px solid var(--video-accent);
+  color: var(--video-accent); font-size: 11px; padding: 2px 8px; border-radius: 999px;
+  cursor: pointer;
+}
+.effect-tag:hover { background: rgba(255,107,53,0.3); }
+
+/* ===========================
+   Sound Panel
+   =========================== */
+.sound-panel {}
+.mood-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+.mood-btn {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+  background: var(--bg-3); border: 1px solid var(--border); border-radius: 8px;
+  cursor: pointer; color: var(--text); font-size: 13px; transition: all 0.15s;
+}
+.mood-btn:hover { border-color: var(--video-accent); }
+.mood-btn.active { border-color: var(--video-accent); background: rgba(255,107,53,0.15); color: var(--video-accent); }
+.sound-badge {
+  display: inline-block; background: rgba(255,107,53,0.12);
+  border: 1px solid var(--video-accent); color: var(--video-accent);
+  font-size: 11px; padding: 2px 8px; border-radius: 999px; margin-bottom: 8px;
+}
+
+/* ===========================
+   Reference Panel
+   =========================== */
+.ref-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+.ref-grid { display: flex; flex-direction: column; gap: 8px; }
+.ref-card {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-3); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; position: relative;
+}
+.ref-card.linked { border-color: var(--video-accent); }
+.ref-thumb { width: 48px; height: 36px; border-radius: 4px; overflow: hidden; background: var(--bg); flex-shrink: 0; }
+.ref-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.ref-thumb-empty { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 18px; color: var(--text-dim); }
+.ref-info { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ref-label-input {
+  background: transparent; border: none; border-bottom: 1px solid var(--border);
+  color: var(--text); font-size: 12px; width: 100%; padding: 2px 0;
+}
+.ref-label-input:focus { outline: none; border-bottom-color: var(--video-accent); }
+.ref-tag-select {
+  background: var(--bg-2); border: 1px solid var(--border); color: var(--text);
+  font-size: 11px; padding: 2px 6px; border-radius: 4px; cursor: pointer;
+}
+.ref-card-actions { display: flex; gap: 6px; align-items: center; }
+
+/* ===========================
+   Motion Brush
+   =========================== */
+.motion-brush-wrap { display: flex; flex-direction: column; gap: 10px; padding: 8px; height: 100%; }
+.mb-toolbar { display: flex; align-items: center; gap: 16px; padding: 8px 12px; background: var(--bg-2); border-radius: 8px; flex-wrap: wrap; }
+.mb-section { display: flex; align-items: center; gap: 6px; }
+.mb-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 2px; }
+.mb-size-btn {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.mb-size-btn.active { border-color: var(--video-accent); color: var(--video-accent); background: rgba(255,107,53,0.15); }
+.mb-direction-grid { display: grid; grid-template-columns: repeat(3, 28px); grid-template-rows: repeat(3, 28px); gap: 2px; }
+.mb-dir-btn {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  background: var(--bg-3); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text); font-size: 14px; cursor: pointer; transition: all 0.15s;
+}
+.mb-dir-btn:nth-child(1) { grid-column: 1; grid-row: 1; }
+.mb-dir-btn:nth-child(2) { grid-column: 2; grid-row: 1; }
+.mb-dir-btn:nth-child(3) { grid-column: 3; grid-row: 1; }
+.mb-dir-btn:nth-child(4) { grid-column: 3; grid-row: 2; }
+.mb-dir-btn:nth-child(5) { grid-column: 3; grid-row: 3; }
+.mb-dir-btn:nth-child(6) { grid-column: 2; grid-row: 3; }
+.mb-dir-btn:nth-child(7) { grid-column: 1; grid-row: 3; }
+.mb-dir-btn:nth-child(8) { grid-column: 1; grid-row: 2; }
+.mb-dir-btn:hover { border-color: var(--video-accent); }
+.mb-dir-btn.active { border-color: var(--video-accent); }
+.mb-canvas-wrap { flex: 1; position: relative; border-radius: 8px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; }
+.mb-canvas { max-width: 100%; max-height: 100%; display: block; }
+.mb-prompt-preview {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: var(--bg-2); border-radius: 8px; padding: 8px 12px;
+}
+.mb-prompt-text { font-size: 12px; color: var(--text-dim); flex: 1; line-height: 1.5; }
+
+/* ===========================
+   Keyframe Mode
+   =========================== */
+.keyframe-pair { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.keyframe-slot { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.keyframe-label { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.keyframe-arrow { font-size: 20px; color: var(--video-accent); flex-shrink: 0; }
+
+/* ===========================
+   Movie Builder
+   =========================== */
+.movie-builder {}
+.movie-stats { display: flex; gap: 16px; margin: 8px 0 16px; font-size: 12px; color: var(--text-dim); }
+.movie-stats strong { color: var(--text); }
+.act-structure { display: flex; flex-direction: column; gap: 8px; }
+.act-block { background: var(--bg-3); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.act-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-2); border-bottom: 1px solid var(--border); }
+.act-label { font-size: 12px; font-weight: 700; color: var(--video-accent); }
+.act-dur { font-size: 11px; color: var(--text-dim); }
+.act-clips { padding: 8px; display: flex; flex-direction: column; gap: 6px; min-height: 40px; }
+.act-clip-row { display: flex; align-items: center; gap: 8px; background: var(--bg-2); border-radius: 6px; padding: 6px 8px; }
+.act-clip-thumb { width: 48px; height: 27px; border-radius: 4px; overflow: hidden; background: var(--bg); flex-shrink: 0; }
+.act-clip-thumb video { width: 100%; height: 100%; object-fit: cover; }
+.act-clip-label { flex: 1; font-size: 11px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.act-clip-dur { font-size: 11px; color: var(--text-dim); flex-shrink: 0; }
+.act-empty { font-size: 11px; color: var(--text-dim); text-align: center; padding: 8px; opacity: 0.5; }
+.unassigned-clips { display: flex; flex-direction: column; gap: 6px; }
+.unassigned-clip { display: flex; align-items: center; gap: 8px; background: var(--bg-3); border-radius: 8px; padding: 8px 10px; }
+.assign-btns { display: flex; gap: 4px; flex-shrink: 0; }
+.assign-btn { font-size: 11px; padding: 3px 8px; }
+
+/* ===========================
+   Studio panel tabs scroll
+   =========================== */
+.studio-panel-tabs { overflow-x: auto; scrollbar-width: none; }
+.studio-panel-tabs::-webkit-scrollbar { display: none; }
