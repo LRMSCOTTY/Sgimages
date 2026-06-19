@@ -6,25 +6,22 @@ import GeneratePanel from './components/GeneratePanel.jsx'
 import AdjustPanel from './components/AdjustPanel.jsx'
 import BackgroundPanel from './components/BackgroundPanel.jsx'
 import GenerativeEditPanel from './components/GenerativeEditPanel.jsx'
+import VideoStudio from './components/video/VideoStudio.jsx'
 import { downloadDataURL } from './lib/imageUtils.js'
 
-const TOOLS = {
-  generate: 'generate',
-  adjust: 'adjust',
-  background: 'background',
-  generative: 'generative'
-}
+const IMAGE_TOOLS = { generate: 'generate', adjust: 'adjust', background: 'background', generative: 'generative' }
 
 export default function App() {
-  const [tool, setTool] = useState(TOOLS.generate)
-  const [image, setImage] = useState(null) // current dataURL or null
+  const [tool, setTool] = useState('generate')
+  const [image, setImage] = useState(null)
   const [past, setPast] = useState([])
   const [future, setFuture] = useState([])
   const [busy, setBusy] = useState(false)
   const [busyLabel, setBusyLabel] = useState('')
   const [error, setError] = useState(null)
 
-  // Commit a new image state, pushing the previous one onto the undo stack.
+  const isVideoMode = tool === 'video'
+
   const commit = useCallback(
     (next) => {
       setPast((p) => (image ? [...p, image] : p))
@@ -55,7 +52,6 @@ export default function App() {
     })
   }, [image])
 
-  // Wraps an async AI/image task with busy + error handling.
   const runTask = useCallback(
     async (label, fn) => {
       setBusy(true)
@@ -86,40 +82,42 @@ export default function App() {
     setError(null)
   }, [])
 
-  const panel = useMemo(() => {
+  const imagePanel = useMemo(() => {
+    if (isVideoMode) return null
     const shared = { image, runTask, busy, setImage: commit }
     switch (tool) {
-      case TOOLS.generate:
-        return <GeneratePanel {...shared} />
-      case TOOLS.adjust:
-        return <AdjustPanel {...shared} />
-      case TOOLS.background:
-        return <BackgroundPanel {...shared} />
-      case TOOLS.generative:
-        return <GenerativeEditPanel {...shared} />
-      default:
-        return null
+      case IMAGE_TOOLS.generate: return <GeneratePanel {...shared} />
+      case IMAGE_TOOLS.adjust: return <AdjustPanel {...shared} />
+      case IMAGE_TOOLS.background: return <BackgroundPanel {...shared} />
+      case IMAGE_TOOLS.generative: return <GenerativeEditPanel {...shared} />
+      default: return null
     }
-  }, [tool, image, runTask, busy, commit])
+  }, [tool, image, runTask, busy, commit, isVideoMode])
 
   return (
     <div className="app">
       <Sidebar tool={tool} setTool={setTool} />
-      <main className="workspace">
-        <Toolbar
-          canUndo={past.length > 0}
-          canRedo={future.length > 0}
-          canExport={!!image}
-          onUndo={undo}
-          onRedo={redo}
-          onDownload={handleDownload}
-          onClear={handleClear}
-        />
-        <div className="workspace-body">
-          <CanvasStage image={image} busy={busy} busyLabel={busyLabel} error={error} />
-          <aside className="panel">{panel}</aside>
-        </div>
-      </main>
+      {isVideoMode ? (
+        <main className="workspace video-workspace">
+          <VideoStudio sourceImage={image} />
+        </main>
+      ) : (
+        <main className="workspace">
+          <Toolbar
+            canUndo={past.length > 0}
+            canRedo={future.length > 0}
+            canExport={!!image}
+            onUndo={undo}
+            onRedo={redo}
+            onDownload={handleDownload}
+            onClear={handleClear}
+          />
+          <div className="workspace-body">
+            <CanvasStage image={image} busy={busy} busyLabel={busyLabel} error={error} />
+            <aside className="panel">{imagePanel}</aside>
+          </div>
+        </main>
+      )}
     </div>
   )
 }
