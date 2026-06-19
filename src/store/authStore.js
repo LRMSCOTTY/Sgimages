@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-const TOKEN_KEY = 'sgimages_token'
+const TOKEN_KEY = 'providai_token'
 
 export const useAuthStore = create((set, get) => ({
   user: null,

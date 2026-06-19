@@ -80,7 +80,7 @@ export default function App() {
   }, [commit])
 
   const handleDownload = useCallback(() => {
-    if (image) downloadDataURL(image, `sgimages-${Date.now()}.png`)
+    if (image) downloadDataURL(image, `providai-${Date.now()}.png`)
   }, [image])
 
   const handleClear = useCallback(() => {

@@ -161,7 +161,7 @@ export const useVideoStore = create(
       getClipById: (id) => get().clips.find(c => c.id === id) || null
     }),
     {
-      name: 'sgimages-video-project',
+      name: 'providai-video-project',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         projectName: state.projectName,

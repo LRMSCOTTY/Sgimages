@@ -1,0 +1,31 @@
+{
+  "name": "ProvidAI",
+  "short_name": "ProvidAI",
+  "description": "Professional AI Video Creator — make complete movies with open-source AI models",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#6366f1",
+  "orientation": "any",
+  "categories": ["productivity", "photo", "entertainment"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

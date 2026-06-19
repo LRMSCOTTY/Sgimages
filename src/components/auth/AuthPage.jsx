@@ -35,7 +35,7 @@ export default function AuthPage({ onBack }) {
       <div className="auth-card">
         <div className="auth-logo">
           <span className="auth-logo-icon">🎬</span>
-          <span className="auth-logo-text">SGIMAGES</span>
+          <span className="auth-logo-text">ProvidAI</span>
         </div>
 
         <h2 className="auth-title">

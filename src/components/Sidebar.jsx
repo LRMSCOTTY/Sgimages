@@ -12,7 +12,7 @@ export default function Sidebar({ tool, setTool }) {
     <nav className="sidebar">
       <div className="brand">
         <span className="brand-mark">◆</span>
-        <span className="brand-name">Sgimages</span>
+        <span className="brand-name">ProvidAI</span>
       </div>
 
       <div className="sidebar-section-label">Image Studio</div>

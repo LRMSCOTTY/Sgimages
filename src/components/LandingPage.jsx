@@ -9,7 +9,8 @@ const FEATURES = [
   { icon: '🔊', title: 'Sound Design', desc: 'Select music mood and SFX — guides generation prompts today, native audio generation coming via Kling Omni.' },
   { icon: '⚔️', title: 'Model Battle Arena', desc: 'Send the same prompt to multiple AI models simultaneously. Side-by-side comparison, pick the winner.' },
   { icon: '🔁', title: 'Loop Forge', desc: 'FFmpeg seamless crossfade turns any clip into an infinite loop — perfect for backgrounds and social media.' },
-  { icon: '🎭', title: 'AI Director', desc: 'Describe a scene, Claude AI generates a professional shot plan: establishing wide → medium → close-up → detail.' }
+  { icon: '🎭', title: 'AI Director', desc: 'Describe a scene, Claude AI generates a professional shot plan: establishing wide → medium → close-up → detail.' },
+  { icon: '📱', title: 'Works on Any Device', desc: 'Install ProvidAI on your phone directly from the browser — no App Store required. Full PWA support.' }
 ]
 
 const MODELS = [
@@ -23,6 +24,23 @@ const MODELS = [
 
 export default function LandingPage() {
   const [showAuth, setShowAuth] = useState(false)
+  const [installPrompt, setInstallPrompt] = useState(null)
+  const [installed, setInstalled] = useState(false)
+
+  useState(() => {
+    const handler = (e) => { e.preventDefault(); setInstallPrompt(e) }
+    window.addEventListener('beforeinstallprompt', handler)
+    window.addEventListener('appinstalled', () => setInstalled(true))
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  })
+
+  const handleInstall = async () => {
+    if (!installPrompt) return
+    installPrompt.prompt()
+    const { outcome } = await installPrompt.userChoice
+    if (outcome === 'accepted') setInstalled(true)
+    setInstallPrompt(null)
+  }
 
   if (showAuth) return <AuthPage onBack={() => setShowAuth(false)} />
 
@@ -30,7 +48,7 @@ export default function LandingPage() {
     <div className="landing">
       {/* Nav */}
       <nav className="landing-nav">
-        <div className="landing-nav-logo">🎬 SGIMAGES</div>
+        <div className="landing-nav-logo">🎬 ProvidAI</div>
         <button className="ghost-btn" onClick={() => setShowAuth(true)}>Sign In</button>
       </nav>
 
@@ -41,21 +59,29 @@ export default function LandingPage() {
           Make Professional<br />AI Videos & Movies
         </h1>
         <p className="landing-hero-sub">
-          Powered by LTX-Video, HunyuanVideo, Runway, Luma, and Kling.<br />
-          From single clips to complete three-act films — free to start.
+          Powered by LTX-Video, HunyuanVideo, Mochi-1, Runway, Luma, and Kling.<br />
+          From single clips to complete three-act films — free to start. Install on any device.
         </p>
         <div className="landing-hero-btns">
           <button className="primary-btn landing-cta" onClick={() => setShowAuth(true)}>
             Start Creating Free →
           </button>
-          <span className="landing-hero-note">No credit card • Free forever plan</span>
+          {installPrompt && !installed && (
+            <button className="install-btn" onClick={handleInstall}>
+              📲 Add to Home Screen
+            </button>
+          )}
+          {installed && (
+            <span className="install-done">✓ ProvidAI installed on your device</span>
+          )}
+          <span className="landing-hero-note">No credit card • Free forever plan • Installs on your phone</span>
         </div>
 
         {/* Mock studio preview */}
         <div className="landing-preview">
           <div className="landing-preview-bar">
             <span className="lp-dot red" /><span className="lp-dot yellow" /><span className="lp-dot green" />
-            <span className="lp-title">SGIMAGES — AI Video Creator</span>
+            <span className="lp-title">ProvidAI — AI Video Creator</span>
           </div>
           <div className="landing-preview-body">
             <div className="lp-sidebar">
@@ -122,7 +148,7 @@ export default function LandingPage() {
       {/* CTA */}
       <section className="landing-cta-section">
         <h2>Ready to make your first video?</h2>
-        <p>Sign up free. Bring your own Replicate API key (free tier available).</p>
+        <p>Sign up free. Install ProvidAI on your phone — no App Store needed.</p>
         <button className="primary-btn landing-cta" onClick={() => setShowAuth(true)}>
           Get Started Free →
         </button>
@@ -130,7 +156,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="landing-footer">
-        <span>🎬 SGIMAGES</span>
+        <span>🎬 ProvidAI</span>
         <span>AI Video Creator Platform</span>
       </footer>
     </div>
